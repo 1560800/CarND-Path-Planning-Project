@@ -51,11 +51,11 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
 
-  int lane = 1; // in Midlle lane
-  double ref_vel = 0.0;
+  int lane = 1; // Middle lane within the Frenet space.
+  double ref_vel = 40.0;
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy]
+               &map_waypoints_dx,&map_waypoints_dy, &lane, &ref_vel]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -92,6 +92,7 @@ int main() {
           //   of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
 		  int prev_size = previous_path_x.size();
+
 		  vector<double>ptsx;
 		  vector<double>ptsy;
 
@@ -133,7 +134,7 @@ int main() {
 		// three points ahead of the starting reference point.
 		vector<double> next_wp0 = getXY(
 			car_s + 30 * 1,
-			2 + 4 * lane,
+			(2 + 4 * lane),
 			map_waypoints_s,
 			map_waypoints_x,
 			map_waypoints_y
@@ -219,8 +220,6 @@ int main() {
 
           json msgJson;
 
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
 
           /**
            * TODO: define a path made up of (x,y) points that the car will visit
