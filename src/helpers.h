@@ -9,6 +9,8 @@
 using std::string;
 using std::vector;
 
+constexpr double LANE_WIDTH = 4.0;
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 //   else the empty string "" will be returned.
@@ -152,6 +154,15 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s,
   double y = seg_y + d*sin(perp_heading);
 
   return {x,y};
+}
+// Transform Frenet's d-coordinate into lane number.
+int getLane(double d) {
+	constexpr int lane_index[] = { 0, 1, 2 };
+	for (int i = 0; i < 3; ++i)
+		if (d > LANE_WIDTH* i&& d < LANE_WIDTH * (i + 1)) {
+			return lane_index[i];
+		}
+	return -1; // Deragotory case, outside the road.
 }
 
 #endif  // HELPERS_H

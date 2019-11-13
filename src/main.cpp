@@ -52,10 +52,11 @@ int main() {
   }
 
   int lane = 1; // Middle lane within the Frenet space.
-  double ref_vel = 40.0;
+  double ref_vel = 0; // In miles per hour.
+  double ref_acc = 0.6; // In miles per hour.
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy, &lane, &ref_vel]
+               &map_waypoints_dx,&map_waypoints_dy, &lane, &ref_vel, &ref_acc]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -96,6 +97,85 @@ int main() {
 		  vector<double>ptsx;
 		  vector<double>ptsy;
 
+		  if (prev_size > 0)
+		  {
+			  // For planning purposes, we go to the place in time where the last
+			  // predicted path point would be. 
+			  car_s = end_path_s;
+		  }
+
+		  // Sensor fusion and prediction and trajectory generation.
+		  bool too_close = false; // Check the car ahead of me is within 30m
+		  bool left_lane_safe = true; // Check the  car in left lane is in range of 30m 
+		  bool right_lane_safe = true; // Check the  car in right lane is in range of 30m 
+
+		  int right_lane_number = (lane + 1) <= 2 ? (lane + 1) : 2; 
+		  int left_lane_number = (lane - 1) <= 0 ? 0 : (lane - 1);
+
+		  //iterating through sensor fusion to see if there is car ahead
+		  for (int i = 0; i < sensor_fusion.size(); i++) {
+
+			  //check other cars in my lane
+			  float d = sensor_fusion[i][6];
+			  double vx = sensor_fusion[i][3];
+			  double vy = sensor_fusion[i][4];
+			  double check_speed = sqrt(vx * vx + vy * vy);
+			  double check_car_s = sensor_fusion[i][5];
+			  double car_lane = getLane(d);
+
+			  //around car's position in future
+			  check_car_s += ((double)prev_size * 0.02 * check_speed);
+
+			  if (lane - car_lane == 0) {
+
+				  if ((check_car_s > car_s) && ((check_car_s - car_s) < 30)) {
+					  too_close = true;
+				  }
+			  } //current lane check loop end
+
+			  //check if there is car in safe range of left_lane
+			  //only check if there is possibility of taking left lane change
+			  if (lane > 0) {
+				  //if other car in the loop is in left lane of our car
+				  if (lane - car_lane == 1) {
+					  //absolute diff as we need to make sure that we have enough gap
+					  //between car behind us and ahead of us in left lane
+					  float diff = abs(check_car_s - car_s);
+					  if (diff < 30) {
+						  left_lane_safe = false;
+					  }
+				  }
+			  }
+
+			  if (lane < 2) {
+				  //if other car in the loop is in left lane of our car
+				  if (lane - car_lane == -1) {
+					  //absolute diff as we need to make sure that we have enough gap
+					  //between car behind us and ahead of us in left lane
+					  float diff = abs(check_car_s - car_s);
+					  if (diff < 30) {
+						  right_lane_safe = false;
+					  }
+				  }
+			  }
+
+		  } //iterating through sensor fusion to see if there is car ahead loop end
+
+		  //smooth acceleration - tune velocity in incremental mode
+		  if (too_close) {
+			  ref_vel -= 0.224;
+			  if (left_lane_safe && lane > 1 ) {
+				  lane = lane - 1;
+			  }
+			  else if (right_lane_safe && lane < 2) {
+				  lane = lane + 1;
+			  }
+		  }
+		  else if (ref_vel < 49.5) {
+			  ref_vel += 0.224;
+		  }
+
+		  //Reference x, y, and yaw
 		  double ref_x = car_x;
 		  double ref_y = car_y;
 		  double ref_yaw = deg2rad(car_yaw);
