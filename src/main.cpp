@@ -164,7 +164,7 @@ int main() {
 		  //smooth acceleration - tune velocity in incremental mode
 		  if (too_close) {
 			  ref_vel -= 0.224;
-			  if (left_lane_safe && lane > 1 ) {
+			  if (left_lane_safe && lane > 0 ) {
 				  lane = lane - 1;
 			  }
 			  else if (right_lane_safe && lane < 2) {
