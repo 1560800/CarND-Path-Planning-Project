@@ -29,4 +29,49 @@ The highway's waypoints loop around so the frenet s value, distance along the ro
 Here is the data provided from the Simulator to the C++ Program
 
 # Project Rubric and Details of Implementation
+## Project Rubric
+The goal of this project is to drive the car safely on the highway with other vehicles running at different speeds. 
+Self-driving cars should be able to:
+1. Follow speed limit
+2. Must be comfortable while driving (do not exceed maximum jerk, acceleration)
+3. You need to change lanes when the vehicle ahead is driving slowly, and it is safe to change lanes
+4. Should stay in that lane
+5. Avoid collisions
+## Reflection on Implementation
+#### 1. The car will travel according to the speed limit.
+* To achieve this, the maximum speed of the car was limited to 49.5MPH (speed limit is 50MPH).
 
+#### 2. Maximum acceleration and jerk will not be exceeded.
+* Solved the problem of maximum acceleration / jerk by increasing or decreasing the vehicle speed using a small value of 0.224 mph. 
+* This gives a maximum acceleration of 5 / s / s.
+
+#### 3. The car can change lane
+* The speed is reduced by 0.224 mph to avoid collisions, but at the same time, we started to see the surrounding cars. 
+* If it is safe to change lanes (no other cars in the 30 m range), we are the only ones to change lanes. Logic prioritized the left lane over the right lane (because the left lane is a high-speed lane).
+
+#### 4. The car will stay in the lane except for the time between changing lanes.
+* The car will stay almost in that lane until it needs to be changed (if a slower car is ahead).
+
+#### 5. There is no collision in the car.
+* Sensor fusion data was used to detect surrounding vehicles. 
+* If there is a car within 30m, our car will take safety measures such as reducing the speed when other cars are ahead, and will not change the lane if there are cars in other lanes.
+
+#### 6. Consideration regarding the path generation method
+To generate the path, I used a spline library and library, as shown in the Udacity class and provided anchor points and requested a “Y value” for each “X” to get the (X, Y) coordinates of the path.
+Note: UDACITY video class code was used as the base for the project. And is based largely on that
+
+* I used the remaining previous points and added future pass points for a smooth transition.
+* The car's “S” value was used to get future waypoints in the 30m, 60m, and 90m range. These points were used as spline anchor points.
+* These global coordinate anchor points have been converted to car coordinates for easy calculation.
+* I planed the next 30 m (1.5 seconds from now) path plan. The plan wasn't too short or too long as it may not reflect the correct situation around the car.
+* First, I used speed to divide the distance into N points.
+* I adjusted Y for every X using a spline.
+* The X and Y coordinates of these cars have been converted to (x, y) on the map.
+
+## Conclusions and challenges
+
+This project was successful because it cleared all Rubric's requirements.
+
+Future issues are as follows.
+The lane change algorithm only considers the distance between the vehicles closest to each lane.
+In creating an optimal path, it is necessary to recognize not only the nearest vehicle but also the positional relationship with multiple vehicles ahead and behind, and find the optimal path using a cost function.
